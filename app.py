@@ -7,7 +7,6 @@ from pathlib import Path
 
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.responses import FileResponse
-from fastapi.staticfiles import StaticFiles
 
 ROOT = Path(__file__).resolve().parent
 OUTPUT = Path(os.getenv("VOICE_OUTPUT_DIR", ROOT / "generated"))
@@ -19,7 +18,12 @@ _load_lock = threading.Lock()
 _inference_lock = threading.Lock()
 
 app = FastAPI(title="Text Reader & Voice Cloner")
-app.mount("/static", StaticFiles(directory=ROOT), name="static")
+
+@app.get("/static/{asset}")
+def static_asset(asset: str):
+    if asset not in {"style.css", "frontend.js"}:
+        raise HTTPException(404, "Asset not found")
+    return FileResponse(ROOT / asset, media_type="text/css" if asset.endswith(".css") else "application/javascript")
 
 
 def model():
